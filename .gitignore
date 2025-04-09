@@ -1,0 +1,70 @@
+# Directorios de compilación
+/build/
+/cmake-build-*/
+/out/
+/Debug/
+/Release/
+/x64/
+/x86/
+
+# Archivos generados por CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Archivos compilados
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# Archivos IDE específicos
+.idea/
+.vscode/
+*.swp
+*.swo
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos temporales
+*.log
+*.tmp
+*~
+
+# Archivos de dependencias externas
+/external/
+/deps/
+/vendor/
+
+# Archivos específicos de C++
+*.d
+*.slo
+*.lo
+*.o
+*.obj
+*.gch
+*.pch
+*.so
+*.dylib
+*.dll
+*.lai
+*.la
+*.a
+*.lib
+*.exe
+*.out
+*.app
