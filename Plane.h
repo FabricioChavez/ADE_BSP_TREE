@@ -282,26 +282,6 @@ bool Polygon<T>::contains(const Point3D<T> &p) const { // ok done
 
 template<typename T>
 RelationType Polygon<T>::relationWithPlane(const Plane<T> &plane) const {
-   // Plane<T> polygon_plane = getPlane();
-
-//    Vector3D <T> plane_to_point( polygon_plane.getPoint() - plane.getPoint()); // Point from plane to polygon plane
-//    plane.getNormal().normalize();
-//
-//
-//    bool is_parallel = polygon_plane.getNormal().crossProduct(plane.getNormal()) == zero_vector;
-//
-//    if(is_parallel){
-//        T distance = plane.distance(polygon_plane.getPoint());
-//        if(distance == zero_scalar) return RelationType::COINCIDENT;
-//
-//
-//        T position = plane_to_point.dotProduct(plane.getNormal());
-//
-//        if (position > zero_scalar){
-//            return RelationType::IN_FRONT;
-//        }else return  RelationType::BEHIND;
-//
-//    }
 
     int n = getVertices().size();
 

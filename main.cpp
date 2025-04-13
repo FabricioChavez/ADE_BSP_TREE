@@ -238,52 +238,52 @@ void testPolygonsIntegrity() {
 // ---------------------------------------------------------------------
 // Test 2: Query
 // ---------------------------------------------------------------------
-//void testQueryRandomBalls(int iterations = 40) {
-//    std::cout << "Iniciando test de query con Balls...\n";
-//
-//    BSPTree<> tree;
-//    const int numPolygons = 100;
-//    std::vector<Polygon<>> originalPolys;
-//    for (int i = 0; i < numPolygons; ++i) {
-//        Polygon<> poly = generateRandomPolygon(3, 5);
-//        originalPolys.push_back(poly);
-//        tree.insert(poly);
-//    }
-//
-//    std::vector<Polygon<>> allPolys = tree.getAllPolygons();
-//    for (int i = 0; i < iterations; ++i) {
-//        Ball<> ball = generateRandomBall();
-//        float dt = 2.0f;
-//        LineSegment<> movement = ball.step(dt);
-//
-//        // Brute force
-//        std::vector<Polygon<>> bruteCandidates;
-//        for (const auto& poly : allPolys) {
-//            if (sweptSphereIntersectsPolygon(ball, movement, poly))
-//                bruteCandidates.push_back(poly);
-//        }
-//
-//        // Usar el query
-//        std::vector<Polygon<>> queryCandidates = tree.query(ball, movement);
-//
-//        // Ordenar
-//        auto sortByArea = [](const Polygon<>& a, const Polygon<>& b) {
-//            return a.area().getValue() < b.area().getValue();
-//        };
-//        std::sort(bruteCandidates.begin(), bruteCandidates.end(), sortByArea);
-//        std::sort(queryCandidates.begin(), queryCandidates.end(), sortByArea);
-//
-//        // Comparar
-//        bool match = comparePolygonSets(bruteCandidates, queryCandidates) &&
-//                     comparePolygonSets(queryCandidates, bruteCandidates);
-//        std::cout << "Iteration " << i << ": "
-//                  <<   "Brute = " << bruteCandidates.size()
-//                  << ", Query = " << queryCandidates.size() << "\n";
-//        assert(match && "No se obtienen los mismos resultado al aplicar fuerza bruta y al emplear tu implementacion de query BSP.");
-//    }
-//
-//    std::cout << "Test de query con Balls aleatorias pasó exitosamente.\n";
-//}
+void testQueryRandomBalls(int iterations = 40) {
+    std::cout << "Iniciando test de query con Balls...\n";
+
+    BSPTree<> tree;
+    const int numPolygons = 100;
+    std::vector<Polygon<>> originalPolys;
+    for (int i = 0; i < numPolygons; ++i) {
+        Polygon<> poly = generateRandomPolygon(3, 5);
+        originalPolys.push_back(poly);
+        tree.insert(poly);
+    }
+
+    std::vector<Polygon<>> allPolys = tree.getAllPolygons();
+    for (int i = 0; i < iterations; ++i) {
+        Ball<> ball = generateRandomBall();
+        float dt = 2.0f;
+        LineSegment<> movement = ball.step(dt);
+
+        // Brute force
+        std::vector<Polygon<>> bruteCandidates;
+        for (const auto& poly : allPolys) {
+            if (sweptSphereIntersectsPolygon(ball, movement, poly))
+                bruteCandidates.push_back(poly);
+        }
+
+        // Usar el query
+        std::vector<Polygon<>> queryCandidates = tree.query(ball, movement);
+
+        // Ordenar
+        auto sortByArea = [](const Polygon<>& a, const Polygon<>& b) {
+            return a.area().getValue() < b.area().getValue();
+        };
+        std::sort(bruteCandidates.begin(), bruteCandidates.end(), sortByArea);
+        std::sort(queryCandidates.begin(), queryCandidates.end(), sortByArea);
+
+        // Comparar
+        bool match = comparePolygonSets(bruteCandidates, queryCandidates) &&
+                     comparePolygonSets(queryCandidates, bruteCandidates);
+        std::cout << "Iteration " << i << ": "
+                  <<   "Brute = " << bruteCandidates.size()
+                  << ", Query = " << queryCandidates.size() << "\n";
+        assert(match && "No se obtienen los mismos resultado al aplicar fuerza bruta y al emplear tu implementacion de query BSP.");
+    }
+
+    std::cout << "Test de query con Balls aleatorias pasó exitosamente.\n";
+}
 
 
 // ---------------------------------------------------------------------
@@ -323,9 +323,9 @@ void testTreeStructureValidity() {
 }
 
 int main() {
-   testTreeStructureValidity();
-   testPolygonsIntegrity();
-//    testQueryRandomBalls();
+    testTreeStructureValidity();
+    testPolygonsIntegrity();
+     testQueryRandomBalls();
 
     std::cout << "\nTodos los tests se ejecutaron correctamente.\n";
     return 0;

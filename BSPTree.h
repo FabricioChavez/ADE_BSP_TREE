@@ -6,7 +6,7 @@
 #include <functional>
 #include "Plane.h"
 #include "Ball.h"
-
+#include <stack>
 // Forward declarations
 template <typename T>
 class BSPNode;
@@ -22,6 +22,7 @@ private:
     std::unique_ptr<BSPNode<T>> front_;
     std::unique_ptr<BSPNode<T>> back_;
     std::vector<Polygon<T>> polygons_;
+    static const T zero;
 
 public:
     BSPNode() : partition_(), front_(nullptr), back_(nullptr) {}
@@ -43,6 +44,12 @@ public:
 
     // Método de consulta: recolecta en 'results' los polígonos que pueden colisionar con la Ball.
     void query(const Ball<T>& ball, const LineSegment<T>& movement, std::vector<Polygon<T>>& results) const;
+
+    void candidate_tree(const Point3D<T>& pos, std::stack<const BSPNode<T>*>& path) const;
+
+    void region_explorer(const BSPNode<T>* node, std::vector<Polygon<T>>& ans, const Ball<T>& ball, const LineSegment<T>& movement) const;
+
+    bool is_there_interception(const Ball<T>& ball, const LineSegment<T>& movement, const Polygon<T>& poly) const;
 
     // Print
     void print(std::ostream& os, int indent = 0) const{
@@ -147,7 +154,104 @@ void BSPNode<T>::insert(const Polygon<T> &polygon) {
     }
 }
 
+template <typename T>
+const T BSPNode<T>::zero = static_cast<NType>(0.0);
 
+template<typename T>
+void BSPNode<T>::query(const Ball<T> &ball, const LineSegment<T> &movement, std::vector<Polygon<T>> &results) const {
+
+    std::stack<const BSPNode<T>*> r0_path;
+    std::stack<const BSPNode<T>*> rf_path;
+
+    candidate_tree(movement.getP1()  , r0_path);
+    candidate_tree(movement.getP2() , rf_path);
+
+
+    while (r0_path.top()!=rf_path.top()){
+
+        if(r0_path.size() == rf_path.size()){
+            if(r0_path.top()!=rf_path.top()){
+                r0_path.pop() ;
+                rf_path.pop();
+            }
+        }else if(r0_path.size() > rf_path.size()) r0_path.pop();
+        else if(r0_path.size() < rf_path.size()) rf_path.pop();
+    }
+
+    const BSPNode<T>* sub_tree_search_root = rf_path.top();
+
+
+
+
+    region_explorer(sub_tree_search_root , results, ball , movement);
+
+
+
+}
+
+
+template<typename T>
+void BSPNode<T>::candidate_tree(const Point3D<T>& pos, std::stack<const BSPNode<T>*>& path) const{
+    if(back_ == nullptr and front_ == nullptr){
+        path.push(this);
+        return;
+    }
+
+    Plane<T> plane = getPartition();
+
+    T loc = plane.distance(pos);
+
+    if(loc== zero) {
+        path.push(this);
+        return;
+    }
+
+    path.push(this);
+
+    if(loc > zero and front_!= nullptr) {
+        front_->candidate_tree(pos , path);
+    }else if(loc < zero and back_ != nullptr){
+        back_->candidate_tree(pos , path);
+    }
+}
+
+template<typename T>
+void BSPNode<T>::region_explorer(const BSPNode<T>* node, std::vector<Polygon<T>>& ans, const Ball<T>& ball, const LineSegment<T>& movement) const {
+
+    for(auto p : node->polygons_){
+        if(is_there_interception(ball, movement , p))
+            ans.push_back(p);
+    }
+
+    if(node->getBack()== nullptr and node->getFront() == nullptr) return;
+
+    if(node->front_ != nullptr) region_explorer(node->getFront() , ans , ball , movement);
+    if(node->back_ != nullptr) region_explorer(node->getBack() , ans , ball , movement);
+
+}
+
+template<typename T>
+bool BSPNode<T>::is_there_interception(const Ball<T> &ball, const LineSegment<T> &movement, const Polygon<T> &poly) const {
+    Plane<T> plane = poly.getPlane();
+    T r = ball.getRadius();
+    T dStart = plane.distance(movement.getP1());
+    T dEnd   = plane.distance(movement.getP2());
+
+    // Claro que no hay interseccion
+    if ((dStart > r && dEnd > r) || (dStart < -r && dEnd < -r))
+        return false;
+
+    // Calcular t (si existe)
+    T denom = dStart - dEnd;
+    if (denom == 0) return false; // Evitar división por cero.
+    T t = dStart / denom;
+    if (t < T(0) || t > T(1))
+        return false;
+
+    // Punto de interseccion
+    Point3D<T> intersection = movement.getP1() + (movement.getP2() - movement.getP1()) * t;
+    return poly.contains(intersection);
+}
 
 // BSPTree class template
 template <typename T = NType>
@@ -202,6 +306,14 @@ void BSPTree<T>::insert(const Polygon<T> &polygon) {
     }else {
         root_->insert(polygon);
     }
+}
+
+template<typename T>
+std::vector<Polygon<T>> BSPTree<T>::query(const Ball<T> &ball, const LineSegment<T> &movement) const {
+    std::vector<Polygon<T>> ans;
+
+    root_->query(ball , movement , ans);
+    return ans;
 }
 
 
