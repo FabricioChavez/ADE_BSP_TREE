@@ -331,67 +331,80 @@ RelationType Polygon<T>::relationWithPlane(const Plane<T> &plane) const {
 
 }
 template<typename T>
-std::pair<Polygon<T>, Polygon<T>> Polygon<T>::split(const Plane<T> &plane) const {
-    std::vector<Point3D<T>> vertices = vertices_;
-    std::vector<Point3D<T>> pos_p, neg_p;
+std::pair<Polygon<T>, Polygon<T>> Polygon<T>::split(const Plane<T> &plane) const { // ok done
 
+    std::vector<Point3D<T>> vertices = vertices_;;//push_back to cover all edges in the polygon
+    vertices.push_back(vertices_[0]);
+    std::vector<Point3D<T>> pos_p , neg_p;
 
-    vertices.push_back(vertices_[0]); // Cerrar el polígono
+    int n = vertices.size();
+    for (int i = 1; i < n; ++i) {
+        Point3D<T> vertice_to_plane_c(vertices[i]); //current point location
+        Point3D<T> vertice_to_plane_b(vertices[i-1]); //before point location
 
-    for (size_t i = 1; i < vertices.size(); ++i) {
-        const Point3D<T>& current = vertices[i];
-        const Point3D<T>& previous = vertices[i - 1];
+        //  cout<<"CURRENT "<< vertices[i]<<endl;
+        //  cout<<"BEFORE  "<<vertices[i-1]<<endl;
 
-        // Calcular distancias con signo
-        T dist_current = plane.distance(current);
-        T dist_previous = plane.distance(previous);
+        T location_c = plane.distance(vertice_to_plane_c);
+        T location_b = plane.distance(vertice_to_plane_b);
 
-        // Clasificar vértices usando epsilon
-        bool current_front = (dist_current > zero_scalar);
-        bool current_back = (dist_current < zero_scalar);
-        bool previous_front = (dist_previous > zero_scalar);
-        bool previous_back = (dist_previous < zero_scalar);
-
-        // ---- Manejar vértices en el plano ----
-        if (abs(dist_current) == zero_scalar) {
-            pos_p.push_back(current);
-            neg_p.push_back(current);
+        T dist= abs(plane.distance(vertices[i]));
+        T dist_b= abs(plane.distance(vertices[i-1]));
+        if((dist==zero_scalar))
+        {
+            pos_p.push_back(vertices[i]);
+            neg_p.push_back(vertices[i]);
             continue;
+            // cout<<"CURRENT IS ON THE PLANE -_-"<<boolalpha<<(dist==zero_scalar)<<endl;
         }
 
-        // ---- Caso 1: Borde cruzando el plano ----
-        if ((current_front and previous_back) or (current_back and previous_front)) {
-            Line<T> edge(previous, current);
 
-                Point3D<T> intersect = plane.intersect(edge);
 
-                // Evitar puntos duplicados
-                if (pos_p.empty() || pos_p.back() != intersect) {
-                    pos_p.push_back(intersect);
-                }
-                if (neg_p.empty() || neg_p.back() != intersect) {
-                    neg_p.push_back(intersect);
-                }
+
+        // front 1  back 0
+        bool current_pos_c = (location_c > zero_scalar);
+        bool current_pos_b = (location_b > zero_scalar);
+
+
+
+
+
+        if(current_pos_c ^ current_pos_b and dist_b > zero_scalar){ // if both are on different sides of the plane there is an intersection in this segment
+
+            Line<T> inter_seg(vertices[i-1],vertices[i]);
+            Point3D<T> intersect_point = plane.intersect(inter_seg);
+            //   cout<<"INSERSECT"<<intersect_point<<endl;
+
+            neg_p.push_back(intersect_point);
+            pos_p.push_back(intersect_point);
+            if(current_pos_c ){
+                pos_p.push_back(vertices[i]);
+            }else {
+                neg_p.push_back(vertices[i]);
+
+            }
+
+
+            continue;
 
         }
 
-        // ---- Añadir vértices a las listas correspondientes ----
-        if (current_front || (!current_back && abs(dist_current) <= epsilon)) {
-            pos_p.push_back(current);
-        }
-        if (current_back || (!current_front && abs(dist_current) <= epsilon)) {
-            neg_p.push_back(current);
-        }
+
+        if(current_pos_c) pos_p.push_back(vertices[i]);
+        else neg_p.push_back(vertices[i]);
+
+
+
+
     }
 
-    // Validar polígonos resultantes (mínimo 3 vértices)
-    std::pair<Polygon<T>, Polygon<T>> result;
-    if (pos_p.size() >= 3) result.first = Polygon<T>(pos_p);
-    if (neg_p.size() >= 3) result.second = Polygon<T>(neg_p);
+    Polygon<T> pos_poly(pos_p);
+    Polygon<T> neg_poly(neg_p);
 
-    return result;
+
+
+    return std::make_pair(pos_poly , neg_poly);
 }
-
 template<typename T>
 T Polygon<T>::area() const { // ok done
 
