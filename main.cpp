@@ -13,7 +13,7 @@
 
 
 // ---------------------------------------------------------------------
-// Funciones auxiliares 
+// Funciones auxiliares
 // ---------------------------------------------------------------------
 
 void generateOrthonormalBasis(const Vector3D<NType>& normal, Vector3D<NType>& u, Vector3D<NType>& v) {
@@ -30,7 +30,7 @@ void generateOrthonormalBasis(const Vector3D<NType>& normal, Vector3D<NType>& u,
 Polygon<NType> generateRandomPolygon(int minPoints = 3, int maxPoints = 5) {
     std::random_device rd;
     std::mt19937 gen(rd());
-    
+
     // Número de vértices
     std::uniform_int_distribution<> pointsDist(minPoints, maxPoints);
     int numPoints = pointsDist(gen);
@@ -64,7 +64,7 @@ Polygon<NType> generateRandomPolygon(int minPoints = 3, int maxPoints = 5) {
         float angle = baseAngle - i * angleStep;
         angles.push_back(angle);
     }
-    
+
     // Generar los vertices
     std::vector<Point3D<NType>> vertices;
     for (int i = 0; i < numPoints; i++) {
@@ -83,18 +83,18 @@ bool similarPlane(const Plane<NType>& p1, const Plane<NType>& p2, float tol = 1e
     // Obtener las normales
     Vector3D<NType> n1 = p1.getNormal();
     Vector3D<NType> n2 = p2.getNormal();
-    
+
     NType dot = n1.dot(n2);
     if (!(dot >= NType(1.0f) || dot <= NType(-1.0f)))
         return false;
-    
+
     if (dot <= NType(-1.0f)) {
         n2 = -n2;
     }
-    
+
     NType d1 = -(n1.dot(p1.getPoint()));
     NType d2 = -(n2.dot(p2.getPoint()));
-    
+
     return std::abs(d1.getValue() - d2.getValue()) < tol;
 }
 
@@ -104,13 +104,13 @@ Ball<NType> generateRandomBall() {
     std::mt19937 gen(rd());
     std::uniform_real_distribution<float> posDist(-50.0f, 50.0f);
     Point3D<NType> pos(NType(posDist(gen)), NType(posDist(gen)), NType(posDist(gen)));
-    
+
     std::uniform_real_distribution<float> velDist(-30.0f, 30.0f);
     Vector3D<NType> vel(NType(velDist(gen)), NType(velDist(gen)), NType(velDist(gen)));
-    
+
     std::uniform_real_distribution<float> radiusDist(1.0f, 5.0f);
     NType radius = NType(radiusDist(gen));
-    
+
     return Ball<NType>(pos, vel, radius);
 }
 
@@ -120,18 +120,18 @@ bool sweptSphereIntersectsPolygon(const Ball<NType>& ball, const LineSegment<NTy
     NType r = ball.getRadius();
     NType dStart = plane.distance(movement.getP1());
     NType dEnd   = plane.distance(movement.getP2());
-    
+
     // Claro que no hay interseccion
     if ((dStart > r && dEnd > r) || (dStart < -r && dEnd < -r))
         return false;
-    
+
     // Calcular t (si existe)
     NType denom = dStart - dEnd;
     if (denom == 0) return false; // Evitar división por cero.
     NType t = dStart / denom;
     if (t < NType(0) || t > NType(1))
         return false;
-    
+
     // Punto de interseccion
     Point3D<NType> intersection = movement.getP1() + (movement.getP2() - movement.getP1()) * t;
     return poly.contains(intersection);
@@ -195,26 +195,26 @@ void testPolygonsIntegrity() {
     const int numPolygons = 20;
     std::vector<Polygon<NType>> originalPolys;
     BSPTree<NType> tree;
-    
-    // Insertar polígonos 
+
+    // Insertar polígonos
     for (int i = 0; i < numPolygons; ++i) {
         Polygon<NType> poly = generateRandomPolygon(3, 5);
         originalPolys.push_back(poly);
         tree.insert(poly);
     }
-    
+
     // Obtener todos los polígonos del arbol
     auto candidatePolys = tree.getAllPolygons();
-    
+
     // Siempre el numero de poligonos en el arbol es mayor o igual al de los originales
     assert(candidatePolys.size() >= originalPolys.size());
-    
+
     // Si los poligonos son divididos, la suma del area de los pedazos debe ser igual al area del poligono original
     float  totalOriginalArea = 0.0f;
     float totalCandidateArea = 0.0f;
     for (const auto& orig : originalPolys) {
         totalOriginalArea += orig.area().getValue();
-        
+
         float sumCandidateArea = 0.0f;
         // Buscar los que estan en el mismo plano
         for (const auto& cand : candidatePolys) {
@@ -226,11 +226,11 @@ void testPolygonsIntegrity() {
         assert(diff < 1e-1f);
         totalCandidateArea += sumCandidateArea;
     }
-    
+
     // Tambien verificamos en todos los poligonos
     float totalDiff = std::abs(totalCandidateArea - totalOriginalArea);
     assert(totalDiff < 1e-1f);
-    
+
     std::cout << "Test de integridad de polígonos pasó exitosamente.\n";
 }
 
@@ -238,52 +238,52 @@ void testPolygonsIntegrity() {
 // ---------------------------------------------------------------------
 // Test 2: Query
 // ---------------------------------------------------------------------
-void testQueryRandomBalls(int iterations = 40) {
-    std::cout << "Iniciando test de query con Balls...\n";
-    
-    BSPTree<> tree;
-    const int numPolygons = 100;
-    std::vector<Polygon<>> originalPolys;
-    for (int i = 0; i < numPolygons; ++i) {
-        Polygon<> poly = generateRandomPolygon(3, 5);
-        originalPolys.push_back(poly);
-        tree.insert(poly);
-    }
-    
-    std::vector<Polygon<>> allPolys = tree.getAllPolygons();
-    for (int i = 0; i < iterations; ++i) {
-        Ball<> ball = generateRandomBall();
-        float dt = 2.0f;
-        LineSegment<> movement = ball.step(dt);
-        
-        // Brute force
-        std::vector<Polygon<>> bruteCandidates;
-        for (const auto& poly : allPolys) {
-            if (sweptSphereIntersectsPolygon(ball, movement, poly))
-                bruteCandidates.push_back(poly);
-        }
-        
-        // Usar el query
-        std::vector<Polygon<>> queryCandidates = tree.query(ball, movement);
-        
-        // Ordenar
-        auto sortByArea = [](const Polygon<>& a, const Polygon<>& b) {
-            return a.area().getValue() < b.area().getValue();
-        };
-        std::sort(bruteCandidates.begin(), bruteCandidates.end(), sortByArea);
-        std::sort(queryCandidates.begin(), queryCandidates.end(), sortByArea);
-        
-        // Comparar
-        bool match = comparePolygonSets(bruteCandidates, queryCandidates) &&
-                     comparePolygonSets(queryCandidates, bruteCandidates);
-        std::cout << "Iteration " << i << ": " 
-                  <<   "Brute = " << bruteCandidates.size() 
-                  << ", Query = " << queryCandidates.size() << "\n";
-        assert(match && "No se obtienen los mismos resultado al aplicar fuerza bruta y al emplear tu implementacion de query BSP.");
-    }
-    
-    std::cout << "Test de query con Balls aleatorias pasó exitosamente.\n";
-}
+//void testQueryRandomBalls(int iterations = 40) {
+//    std::cout << "Iniciando test de query con Balls...\n";
+//
+//    BSPTree<> tree;
+//    const int numPolygons = 100;
+//    std::vector<Polygon<>> originalPolys;
+//    for (int i = 0; i < numPolygons; ++i) {
+//        Polygon<> poly = generateRandomPolygon(3, 5);
+//        originalPolys.push_back(poly);
+//        tree.insert(poly);
+//    }
+//
+//    std::vector<Polygon<>> allPolys = tree.getAllPolygons();
+//    for (int i = 0; i < iterations; ++i) {
+//        Ball<> ball = generateRandomBall();
+//        float dt = 2.0f;
+//        LineSegment<> movement = ball.step(dt);
+//
+//        // Brute force
+//        std::vector<Polygon<>> bruteCandidates;
+//        for (const auto& poly : allPolys) {
+//            if (sweptSphereIntersectsPolygon(ball, movement, poly))
+//                bruteCandidates.push_back(poly);
+//        }
+//
+//        // Usar el query
+//        std::vector<Polygon<>> queryCandidates = tree.query(ball, movement);
+//
+//        // Ordenar
+//        auto sortByArea = [](const Polygon<>& a, const Polygon<>& b) {
+//            return a.area().getValue() < b.area().getValue();
+//        };
+//        std::sort(bruteCandidates.begin(), bruteCandidates.end(), sortByArea);
+//        std::sort(queryCandidates.begin(), queryCandidates.end(), sortByArea);
+//
+//        // Comparar
+//        bool match = comparePolygonSets(bruteCandidates, queryCandidates) &&
+//                     comparePolygonSets(queryCandidates, bruteCandidates);
+//        std::cout << "Iteration " << i << ": "
+//                  <<   "Brute = " << bruteCandidates.size()
+//                  << ", Query = " << queryCandidates.size() << "\n";
+//        assert(match && "No se obtienen los mismos resultado al aplicar fuerza bruta y al emplear tu implementacion de query BSP.");
+//    }
+//
+//    std::cout << "Test de query con Balls aleatorias pasó exitosamente.\n";
+//}
 
 
 // ---------------------------------------------------------------------
@@ -297,10 +297,10 @@ void testTreeStructureValidity() {
         Polygon<NType> poly = generateRandomPolygon(3, 5);
         tree.insert(poly);
     }
-    
+
     auto nodes = tree.getAllNodes();
     assert(!nodes.empty());
-    
+
     // Verificar que el arbol este correctamente construido
     // Los poligonos en el nodo front deben estar delante del plano
     // y los del nodo back deben estar detras del plano
@@ -318,15 +318,15 @@ void testTreeStructureValidity() {
             assert(validBack && "El subárbol back contiene polígonos que no están detrás del plano del nodo.");
         }
     }
-    
+
     std::cout << "Test de estructura y validez del árbol pasó exitosamente.\n";
 }
 
 int main() {
-//    testTreeStructureValidity();
-//    testPolygonsIntegrity();
+   testTreeStructureValidity();
+   testPolygonsIntegrity();
 //    testQueryRandomBalls();
-    
+
     std::cout << "\nTodos los tests se ejecutaron correctamente.\n";
     return 0;
 }

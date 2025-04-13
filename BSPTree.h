@@ -25,6 +25,9 @@ private:
 
 public:
     BSPNode() : partition_(), front_(nullptr), back_(nullptr) {}
+    explicit BSPNode(const Polygon<T> & pol ): partition_(pol.getPlane()),front_(nullptr),back_(nullptr){
+        polygons_.push_back(pol);
+    }
     ~BSPNode() = default;
 
     BSPNode(const BSPNode&) = delete;
@@ -40,14 +43,14 @@ public:
 
     // Método de consulta: recolecta en 'results' los polígonos que pueden colisionar con la Ball.
     void query(const Ball<T>& ball, const LineSegment<T>& movement, std::vector<Polygon<T>>& results) const;
-    
+
     // Print
     void print(std::ostream& os, int indent = 0) const{
         std::string indentStr(indent * 4, ' ');
-        
+
         os << indentStr << "BSPNode:\n";
         os << indentStr << "  Partition: " << partition_ << "\n";
-        
+
         // Imprimir  polígonos
         os << indentStr << "  Polygons (" << polygons_.size() << "): ";
         if (polygons_.empty()) {
@@ -58,7 +61,7 @@ public:
                 os << indentStr << "    [" << i << "]: " << polygons_[i] << "\n";
             }
         }
-        
+
         // Front
         if (front_) {
             os << indentStr << "  Front:\n";
@@ -66,7 +69,7 @@ public:
         } else {
             os << indentStr << "  Front: NULL\n";
         }
-        
+
         // Back
         if (back_) {
             os << indentStr << "  Back:\n";
@@ -103,6 +106,49 @@ public:
     }
 };
 
+template<typename T>
+void BSPNode<T>::insert(const Polygon<T> &polygon) {
+
+    RelationType relation = polygon.relationWithPlane(partition_);
+
+
+    switch (relation) {
+
+        case COINCIDENT :
+            polygons_.push_back(polygon);
+            break;
+
+        case IN_FRONT:
+
+            if(front_== nullptr){
+                front_ = std::make_unique<BSPNode<T>>(polygon);
+            }else front_->insert(polygon);
+
+            break;
+        case BEHIND:
+            if(back_== nullptr){
+                back_ = std::make_unique<BSPNode<T>>(polygon);
+            }else back_->insert(polygon);
+
+            break;
+        case SPLIT:
+
+            std::pair<Polygon<T>, Polygon<T>> ans = polygon.split(partition_);
+
+            if(front_== nullptr){
+                front_ = std::make_unique<BSPNode<T>>(ans.first);
+            }else front_->insert(ans.first);
+
+            if(back_== nullptr){
+                back_ = std::make_unique<BSPNode<T>>(ans.second);
+            }else back_->insert(ans.second);
+
+            break;
+    }
+}
+
+
+
 // BSPTree class template
 template <typename T = NType>
 class BSPTree {
@@ -114,15 +160,16 @@ public:
     ~BSPTree() = default;
 
     void insert(const Polygon<T>& polygon);
-    
+
+
     // Devuelve los polígonos candidatos a colisión con la Ball.
     std::vector<Polygon<T>> query(const Ball<T>& ball, const LineSegment<T>& movement) const;
-    
+
     // Print
     void print(std::ostream& os) const{
         if (root_) {
             os << "BSPTree:\n";
-            root_->print(os, 1); 
+            root_->print(os, 1);
         } else {
             os << "BSPTree is empty.\n";
         }
@@ -147,5 +194,15 @@ public:
             root_->traverse(func);
     }
 };
+
+template<typename T>
+void BSPTree<T>::insert(const Polygon<T> &polygon) {
+    if(root_ == nullptr){
+        root_ = std::make_unique<BSPNode<T>>(polygon);
+    }else {
+        root_->insert(polygon);
+    }
+}
+
 
 #endif // BSPTREE_H
