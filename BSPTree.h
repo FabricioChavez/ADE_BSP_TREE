@@ -128,13 +128,13 @@ void BSPNode<T>::insert(const Polygon<T> &polygon) {
         case IN_FRONT:
 
             if(front_== nullptr){
-                front_ = std::make_unique<BSPNode<T>>(polygon);
+                front_ = std::unique_ptr<BSPNode<T>>(new BSPNode<T>(polygon));
             }else front_->insert(polygon);
 
             break;
         case BEHIND:
             if(back_== nullptr){
-                back_ = std::make_unique<BSPNode<T>>(polygon);
+                back_ = std::unique_ptr<BSPNode<T>>(new BSPNode<T>(polygon));
             }else back_->insert(polygon);
 
             break;
@@ -143,11 +143,11 @@ void BSPNode<T>::insert(const Polygon<T> &polygon) {
             std::pair<Polygon<T>, Polygon<T>> ans = polygon.split(partition_);
 
             if(front_== nullptr){
-                front_ = std::make_unique<BSPNode<T>>(ans.first);
+                front_ = std::unique_ptr<BSPNode<T>>(new BSPNode<T>(ans.first));
             }else front_->insert(ans.first);
 
             if(back_== nullptr){
-                back_ = std::make_unique<BSPNode<T>>(ans.second);
+                back_ = std::unique_ptr<BSPNode<T>>(new BSPNode<T>(ans.second));
             }else back_->insert(ans.second);
 
             break;
@@ -302,14 +302,14 @@ public:
 template<typename T>
 void BSPTree<T>::insert(const Polygon<T> &polygon) {
     if(root_ == nullptr){
-        root_ = std::make_unique<BSPNode<T>>(polygon);
+        root_ = std::unique_ptr<BSPNode<T>>(new BSPNode<T>(polygon));
     }else {
         root_->insert(polygon);
     }
 }
 
 template<typename T>
-std::vector<Polygon<T>> BSPTree<T>::query(const Ball<T> &ball, const LineSegment<T> &movement) const {
+vector<Polygon<T>> BSPTree<T>::query(const Ball<T> &ball, const LineSegment<T> &movement) const {
     std::vector<Polygon<T>> ans;
 
     root_->query(ball , movement , ans);
